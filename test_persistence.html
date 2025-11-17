@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Automático de Persistencia</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            background: #f8f9ff;
+            border-radius: 5px;
+        }
+        .step h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .step p {
+            margin: 5px 0;
+            color: #666;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #444;
+        }
+        .log-line {
+            margin: 3px 0;
+            padding: 2px 0;
+        }
+        .log-success {
+            color: #00ff00;
+        }
+        .log-error {
+            color: #ff4444;
+        }
+        .log-info {
+            color: #ffff00;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Automático de Persistencia</h1>
+        
+        <div class="step">
+            <h3>ℹ️ Instrucciones</h3>
+            <p>Este test verifica que la persistencia de datos funciona correctamente.</p>
+            <p>El servidor debe estar corriendo en http://localhost:3001</p>
+        </div>
+
+        <div class="step">
+            <h3>1️⃣ Paso 1: Busca un Cliente</h3>
+            <p>En la aplicación (http://localhost:3001):</p>
+            <p>- Busca un cliente (ej: escribe "COMERCIAL")</p>
+            <p>- Selecciona uno de la lista</p>
+            <p>- Espera que carguen los productos</p>
+            <button onclick="step1()">✓ He completado Paso 1</button>
+            <div id="status1" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="step">
+            <h3>2️⃣ Paso 2: Rellena UN Dato</h3>
+            <p>En la aplicación:</p>
+            <p>- Busca el primer producto</p>
+            <p>- Busca la columna "ENE '25" (enero)</p>
+            <p>- Ingresa el valor: <strong>10.5</strong></p>
+            <p>- No rellenes más campos</p>
+            <button onclick="step2()">✓ He completado Paso 2</button>
+            <div id="status2" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="step">
+            <h3>3️⃣ Paso 3: Haz Click en "Guardar Datos"</h3>
+            <p>En la aplicación:</p>
+            <p>- Busca el botón "Guardar Datos" (abajo del formulario)</p>
+            <p>- Haz click</p>
+            <p>- Espera el mensaje de éxito (debe desaparecer en 3 segundos)</p>
+            <button onclick="step3()">✓ He completado Paso 3</button>
+            <div id="status3" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="step">
+            <h3>4️⃣ Paso 4: Busca el Cliente NUEVAMENTE</h3>
+            <p>En la aplicación:</p>
+            <p>- Limpia la búsqueda (borra el nombre)</p>
+            <p>- Vuelve a buscar el mismo cliente</p>
+            <p>- Selecciona de nuevo</p>
+            <button onclick="step4()">✓ He completado Paso 4</button>
+            <div id="status4" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="step">
+            <h3>5️⃣ Paso 5: Verifica el Dato</h3>
+            <p>En la aplicación:</p>
+            <p>- Busca el primer producto</p>
+            <p>- Busca la columna "ENE '25" (enero)</p>
+            <p>- ¿Ves el valor <strong>10.5</strong>?</p>
+            <button onclick="stepSuccess()">✅ ¡Sí! Veo el valor 10.5</button>
+            <button onclick="stepFailed()">❌ No veo el valor</button>
+            <div id="status5" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="step">
+            <h3>📋 Logs Capturados</h3>
+            <div id="consoleLogs" class="console-output">
+                <div class="log-line log-info">Esperando eventos...</div>
+            </div>
+            <button onclick="clearLogs()">Limpiar Logs</button>
+            <button onclick="copyLogs()">Copiar Todos los Logs</button>
+        </div>
+
+        <div class="step">
+            <h3>📊 Resultado Final</h3>
+            <div id="result" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let logs = [];
+        let completedSteps = new Set();
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push({ message: logEntry, type });
+            updateLogs();
+        }
+
+        function updateLogs() {
+            const logsHtml = logs.map(log => 
+                `<div class="log-line log-${log.type}">${escapeHtml(log.message)}</div>`
+            ).join('');
+            document.getElementById('consoleLogs').innerHTML = logsHtml;
+            document.getElementById('consoleLogs').scrollTop = document.getElementById('consoleLogs').scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function clearLogs() {
+            logs = [];
+            updateLogs();
+            addLog('Logs limpiados', 'info');
+        }
+
+        function copyLogs() {
+            const text = logs.map(l => l.message).join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                addLog('✅ Logs copiados al portapapeles', 'success');
+            });
+        }
+
+        function setStatus(step, html) {
+            document.getElementById(`status${step}`).innerHTML = html;
+        }
+
+        function markStep(step) {
+            completedSteps.add(step);
+            setStatus(step, '<div class="status success">✅ Completado</div>');
+            addLog(`Paso ${step} completado`, 'success');
+        }
+
+        function step1() {
+            markStep(1);
+            addLog('⏳ Abre la Consola (F12) en la aplicación');
+            addLog('✓ Busca un cliente');
+            addLog('✓ Verifica que los productos se cargaron');
+        }
+
+        function step2() {
+            markStep(2);
+            addLog('✓ Primer producto seleccionado');
+            addLog('✓ Enero (ENE \'25) rellenado con 10.5');
+            addLog('⏳ Prepárate para guardar');
+        }
+
+        function step3() {
+            markStep(3);
+            addLog('✓ Click en "Guardar Datos"');
+            addLog('⏳ Verifica en la consola los logs de guardado');
+            addLog('✓ Debería aparecer un mensaje de éxito');
+        }
+
+        function step4() {
+            markStep(4);
+            addLog('✓ Búsqueda limpiada');
+            addLog('✓ Cliente buscado nuevamente');
+            addLog('✓ Productos cargados nuevamente');
+            addLog('⏳ Ahora verifica si el dato aparece en enero');
+        }
+
+        function stepSuccess() {
+            completedSteps.add(5);
+            const message = '✅ ¡ÉXITO! La persistencia de datos funciona correctamente.';
+            setStatus(5, `<div class="status success">${message}</div>`);
+            addLog(message, 'success');
+            addLog('Los datos se guardaron y se cargan correctamente cuando buscas el cliente nuevamente', 'success');
+            
+            document.getElementById('result').innerHTML = `
+                <div class="status success">
+                    <h3>🎉 TEST EXITOSO</h3>
+                    <p>La persistencia de datos está funcionando correctamente:</p>
+                    <ul>
+                        <li>✅ Datos se guardan correctamente</li>
+                        <li>✅ Datos se cargan cuando buscas el cliente nuevamente</li>
+                        <li>✅ Sistema listo para producción</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        function stepFailed() {
+            completedSteps.add(5);
+            const message = '❌ El dato NO aparece después de guardar';
+            setStatus(5, `<div class="status error">${message}</div>`);
+            addLog(message, 'error');
+            addLog('Posibles problemas:', 'error');
+            addLog('1. El dato no se guardó en la base de datos', 'error');
+            addLog('2. El dato se guardó pero no se carga correctamente', 'error');
+            addLog('3. Hay un problema con la conversión de IDs de producto', 'error');
+            
+            document.getElementById('result').innerHTML = `
+                <div class="status error">
+                    <h3>⚠️ TEST FALLIDO</h3>
+                    <p>La persistencia no está funcionando correctamente.</p>
+                    <p>Por favor:</p>
+                    <ol>
+                        <li>Copia todos los logs de la Consola (F12)</li>
+                        <li>Copia los logs que ves aquí abajo (botón "Copiar")</li>
+                        <li>Envíame:</li>
+                        <ul>
+                            <li>Los logs de la consola del navegador</li>
+                            <li>Los logs que copiaste de aquí</li>
+                            <li>Una captura del formulario</li>
+                        </ul>
+                    </ol>
+                </div>
+            `;
+        }
+
+        // Inicializar
+        addLog('🚀 Test iniciado - Sigue los pasos en la aplicación', 'info');
+        addLog('Asegúrate de tener abierta: http://localhost:3001', 'info');
+    </script>
+</body>
+</html>

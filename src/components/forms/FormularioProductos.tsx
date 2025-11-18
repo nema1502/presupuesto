@@ -135,13 +135,27 @@ export function FormularioProductos() {
   }, []);
 
   const handleInputChange = (productoId: string, mes: string, valor: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [productoId]: {
-        ...prev[productoId],
-        [mes]: valor,
-      },
-    }));
+    try {
+      // Validar que sea un número válido
+      if (valor !== '' && isNaN(parseFloat(valor))) {
+        console.error('Valor inválido:', valor);
+        return;
+      }
+      
+      setFormData((prev) => ({
+        ...prev,
+        [productoId]: {
+          ...prev[productoId],
+          [mes]: valor,
+        },
+      }));
+    } catch (error) {
+      console.error('Error al cambiar valor:', error);
+      setAlertMessage({
+        type: 'error',
+        message: 'Error al editar el valor. Por favor intenta de nuevo.',
+      });
+    }
   };
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -267,7 +281,11 @@ export function FormularioProductos() {
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Ingreso de Datos Mensuales</h2>
 
       {alertMessage && (
-        <div className="mb-4">
+        <div className={`mb-6 p-4 rounded-lg border-2 ${
+          alertMessage.type === 'success'
+            ? 'bg-green-50 border-green-300'
+            : 'bg-red-50 border-red-300'
+        }`}>
           <Alert
             type={alertMessage.type}
             message={alertMessage.message}

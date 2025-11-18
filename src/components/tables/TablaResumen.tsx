@@ -10,6 +10,8 @@ export function TablaResumen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'LLENO' | 'VACIO'>('todos');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const loadClientes = async () => {
@@ -17,10 +19,19 @@ export function TablaResumen() {
         setIsLoading(true);
         setError(null);
         const data = await getClientes();
-        setClientes(data || []);
+        
+        if (!data || data.length === 0) {
+          console.warn('⚠️ No se obtuvieron clientes de la base de datos');
+          setError('No hay clientes disponibles en la base de datos');
+          setClientes([]);
+        } else {
+          setClientes(data);
+          console.log('✅ Clientes cargados:', data.length);
+        }
       } catch (err) {
-        console.error('Error loading clientes:', err);
-        setError('Error al cargar los clientes');
+        console.error('❌ Error loading clientes:', err);
+        setError('Error de conexión con la base de datos. Intenta recargar la página.');
+        setClientes([]);
       } finally {
         setIsLoading(false);
       }
@@ -36,14 +47,40 @@ export function TablaResumen() {
   const estadoLlenoCount = clientes.filter((c) => c.estado === 'LLENO').length;
   const estadoVacioCount = clientes.filter((c) => c.estado === 'VACIO').length;
 
-  // Filtrar clientes por nombre de cliente o código
-  const clientesFiltrados = clientes.filter((cliente) =>
-    cliente.nombre_sucursal.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cliente.cod_sucursal.toString().includes(searchTerm)
-  );
+  // Filtrar clientes por nombre de cliente, código Y por estado
+  const clientesFiltrados = clientes.filter((cliente) => {
+    const coincideSearchTerm =
+      cliente.nombre_sucursal.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.cod_sucursal.toString().includes(searchTerm);
+    
+    const coincideEstado = filtroEstado === 'todos' || cliente.estado === filtroEstado;
+    
+    return coincideSearchTerm && coincideEstado;
+  });
 
   const estadoLlenoCountFiltrado = clientesFiltrados.filter((c) => c.estado === 'LLENO').length;
   const estadoVacioCountFiltrado = clientesFiltrados.filter((c) => c.estado === 'VACIO').length;
+
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      setError(null);
+      const data = await getClientes();
+      
+      if (!data || data.length === 0) {
+        setError('No hay clientes disponibles en la base de datos');
+        setClientes([]);
+      } else {
+        setClientes(data);
+        console.log('✅ Datos actualizados:', data.length);
+      }
+    } catch (err) {
+      console.error('❌ Error al refrescar:', err);
+      setError('Error al conectar con la base de datos. Intenta de nuevo.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const getEstadoBadge = (estado: 'VACIO' | 'LLENO') => {
     return estado === 'LLENO'
@@ -57,9 +94,29 @@ export function TablaResumen() {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Resumen de Clientes</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Resumen de Clientes</h2>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition"
+          title="Refrescar datos"
+        >
+          {isRefreshing ? '⟳ Actualizando...' : '🔄 Refrescar'}
+        </button>
+      </div>
 
-      {error && <Alert type="error" message={error} />}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg text-red-800">
+          <p className="font-medium">⚠️ {error}</p>
+          <button
+            onClick={handleRefresh}
+            className="mt-2 text-red-700 hover:text-red-900 underline font-medium"
+          >
+            Intenta nuevamente
+          </button>
+        </div>
+      )}
 
       {/* Buscador de Clientes */}
       <div className="mb-6">
@@ -75,6 +132,40 @@ export function TablaResumen() {
             Se encontraron <strong>{clientesFiltrados.length}</strong> de <strong>{clientes.length}</strong> clientes
           </p>
         )}
+      </div>
+
+      {/* Filtros por Estado */}
+      <div className="mb-6 flex gap-3 flex-wrap">
+        <button
+          onClick={() => setFiltroEstado('todos')}
+          className={`px-4 py-2 rounded-lg font-medium transition ${
+            filtroEstado === 'todos'
+              ? 'bg-slate-700 text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          📊 Todos ({clientes.length})
+        </button>
+        <button
+          onClick={() => setFiltroEstado('LLENO')}
+          className={`px-4 py-2 rounded-lg font-medium transition ${
+            filtroEstado === 'LLENO'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+          }`}
+        >
+          ✅ LLENO ({clientes.filter((c) => c.estado === 'LLENO').length})
+        </button>
+        <button
+          onClick={() => setFiltroEstado('VACIO')}
+          className={`px-4 py-2 rounded-lg font-medium transition ${
+            filtroEstado === 'VACIO'
+              ? 'bg-orange-600 text-white'
+              : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+          }`}
+        >
+          ⏳ VACIO ({clientes.filter((c) => c.estado === 'VACIO').length})
+        </button>
       </div>
 
       {/* Estadísticas */}
@@ -155,7 +246,10 @@ export function TablaResumen() {
         </div>
       ) : (
         <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-md text-amber-900 font-medium">
-          {searchTerm ? 'No se encontraron clientes que coincidan con tu búsqueda.' : 'No hay clientes registrados. Configura la base de datos en Supabase primero.'}
+          {clientes.length === 0 
+            ? '⚠️ No hay clientes en la base de datos. Por favor carga los datos en Supabase.'
+            : '🔍 No se encontraron clientes que coincidan con tu búsqueda.'
+          }
         </div>
       )}
     </div>

@@ -51,8 +51,8 @@ export function Header() {
     <header className="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-3">
-          <h1 className="text-2xl font-bold">Sistema de Gestión</h1>
-          <span className="text-sm text-slate-300">Productos & Registros</span>
+          <h1 className="text-2xl font-bold">Presupuestos</h1>
+          <span className="text-sm text-slate-300"></span>
         </div>
 
         {userName && (

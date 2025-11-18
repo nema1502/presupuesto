@@ -14,13 +14,19 @@ export async function POST(request: Request) {
 
     console.log('=== API GUARDAR PRODUCTOS ===');
     console.log('Cliente ID recibido:', clienteId);
-    console.log('Productos:', productos.length);
+    console.log('Productos:', productos?.length || 0);
 
-    if (!clienteId || !productos || productos.length === 0) {
+    // Validar que clienteId existe, pero permitir productos vacío
+    if (!clienteId) {
       return NextResponse.json(
-        { error: 'Missing clienteId or productos' },
+        { error: 'Missing clienteId' },
         { status: 400 }
       );
+    }
+
+    // Asegurar que productos es un array
+    if (!Array.isArray(productos)) {
+      productos = [];
     }
 
     // VALIDAR que el cliente existe
@@ -107,6 +113,48 @@ export async function POST(request: Request) {
     }
 
     console.log(`Total guardados: ${registrosGuardados.length}, Errores: ${errores.length}`);
+
+    // Si no hay productos, ELIMINAR todos los registros del cliente
+    if (productos.length === 0) {
+      console.log('✅ Eliminando todos los registros del cliente...');
+      
+      const { error: deleteError } = await supabase
+        .from('registros_mensuales')
+        .delete()
+        .eq('cliente_id', clienteId);
+
+      if (deleteError) {
+        console.error('Error eliminando registros:', deleteError);
+        return NextResponse.json(
+          {
+            status: 'error',
+            message: `Error al limpiar datos: ${deleteError.message}`,
+          },
+          { status: 500 }
+        );
+      }
+
+      // Actualizar estado a VACIO
+      try {
+        await supabase
+          .from('clientes')
+          .update({ estado: 'VACIO' })
+          .eq('id', clienteId);
+        console.log('✅ Estado cliente actualizado a VACIO');
+      } catch (err: any) {
+        console.error('Error actualizando estado cliente:', err.message);
+      }
+
+      console.log('✅ Todos los datos del cliente eliminados');
+      return NextResponse.json(
+        {
+          status: 'success',
+          message: 'Datos eliminados correctamente',
+          registrosGuardados: [],
+        },
+        { status: 200 }
+      );
+    }
 
     // Actualizar estado del cliente si hay éxito
     if (registrosGuardados.length > 0) {

@@ -26,6 +26,7 @@ export function FormularioProductos() {
   const [clienteProductos, setClienteProductos] = useState<ClienteProducto[]>([]);
   const [isLoadingProductos, setIsLoadingProductos] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [alertMessage, setAlertMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [formData, setFormData] = useState<Record<string, Record<string, string>>>({});
 
@@ -176,6 +177,7 @@ export function FormularioProductos() {
 
     try {
       setIsSubmitting(true);
+      setSubmitStatus('loading');
       console.log('Preparando datos para guardar...');
       
       // Preparar datos para guardar en formato normalizado
@@ -219,16 +221,7 @@ export function FormularioProductos() {
       console.log('Productos para guardar:', productosParaGuardar.length);
       console.log('Datos:', productosParaGuardar);
 
-      if (productosParaGuardar.length === 0) {
-        setAlertMessage({
-          type: 'error',
-          message: 'Por favor ingresa al menos un valor',
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      // GUARDAR VÍA API
+      // GUARDAR VÍA API (incluso si está vacío)
       const response = await fetch('/api/guardar-productos', {
         method: 'POST',
         headers: {
@@ -244,6 +237,7 @@ export function FormularioProductos() {
       console.log('Respuesta:', resultado);
 
       if (!response.ok) {
+        setSubmitStatus('error');
         // Mostrar errores detallados si están disponibles
         if (resultado.errores && resultado.errores.length > 0) {
           const detalles = resultado.errores.map((e: any) => `${e.producto_id}: ${e.error}`).join('\n');
@@ -252,6 +246,7 @@ export function FormularioProductos() {
         throw new Error(resultado.message || resultado.error || 'Error al guardar');
       }
 
+      setSubmitStatus('success');
       setAlertMessage({
         type: 'success',
         message: `✅ Datos guardados exitosamente (${resultado.registrosGuardados?.length || 0} registros).`,
@@ -263,14 +258,17 @@ export function FormularioProductos() {
         setFormData({});
         setClienteProductos([]);
         setAlertMessage(null);
+        setSubmitStatus('idle');
       }, 2000);
       
     } catch (error: any) {
       console.error('Error:', error);
+      setSubmitStatus('error');
       setAlertMessage({
         type: 'error',
         message: `Error: ${error?.message || 'Error desconocido'}`,
       });
+      setTimeout(() => setSubmitStatus('idle'), 2000);
     } finally {
       setIsSubmitting(false);
     }
@@ -361,10 +359,21 @@ export function FormularioProductos() {
                         <input
                           type="number"
                           step="0.01"
+                          min="0"
                           value={(formData[prod.producto_id] && (formData[prod.producto_id] as any)[mes.codigo]) || ''}
-                          onChange={(e) => handleInputChange(prod.producto_id, mes.codigo, e.target.value)}
+                          onChange={(e) => {
+                            let value = e.target.value;
+                            // Limitar a 2 decimales
+                            if (value && value.includes('.')) {
+                              const parts = value.split('.');
+                              if (parts[1]?.length > 2) {
+                                value = `${parts[0]}.${parts[1].substring(0, 2)}`;
+                              }
+                            }
+                            handleInputChange(prod.producto_id, mes.codigo, value);
+                          }}
                           placeholder="0.00"
-                          className="input-number text-sm bg-white text-slate-900 font-semibold"
+                          className="input-number text-sm bg-white text-slate-900 font-semibold text-center w-full"
                           disabled={isSubmitting}
                         />
                       </td>
@@ -394,21 +403,52 @@ export function FormularioProductos() {
             >
               {isSubmitting ? 'Guardando...' : 'Guardar Datos'}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCliente(null);
-                setFormData({});
-                setClienteProductos([]);
-              }}
-              className="btn-secondary"
-              disabled={isSubmitting}
-            >
-              Limpiar
-            </button>
           </div>
         )}
       </form>
+
+      {/* Overlay de carga/éxito */}
+      {(submitStatus === 'loading' || submitStatus === 'success' || submitStatus === 'error') && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className={`bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm mx-4 ${
+            submitStatus === 'loading' ? 'animate-pulse' : ''
+          }`}>
+            {submitStatus === 'loading' && (
+              <>
+                <div className="mb-6 flex justify-center">
+                  <div className="w-16 h-16 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">Guardando Datos</h3>
+                <p className="text-gray-600">Por favor espera mientras se guardan los datos...</p>
+              </>
+            )}
+
+            {submitStatus === 'success' && (
+              <>
+                <div className="mb-6 flex justify-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
+                    <span className="text-4xl">✅</span>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-green-700 mb-2">¡Guardado!</h3>
+                <p className="text-green-600">Los datos se han guardado exitosamente</p>
+              </>
+            )}
+
+            {submitStatus === 'error' && (
+              <>
+                <div className="mb-6 flex justify-center">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-4xl">❌</span>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-red-700 mb-2">Error</h3>
+                <p className="text-red-600">Ocurrió un error al guardar los datos</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

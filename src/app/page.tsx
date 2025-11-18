@@ -90,7 +90,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-slate-100 text-gray-600 mt-12 py-6 border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-4 text-center text-sm">
-          <p>© 2025 Gestión de Productos. Powered by Supabase & Next.js</p>
+          <p>© 2025 Gestión de Productos. Powered by Dpto. Análisis de Datos </p>
         </div>
       </footer>
     </div>
